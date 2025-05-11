@@ -6,7 +6,10 @@ from ..models import Users, TodoItem
 from ..database import SessionLocal
 from .auth import get_current_user
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/todos",
+    tags=["todos"],
+)
 
 def get_db():
     db = SessionLocal()
@@ -39,10 +42,7 @@ class TodoItemRequest(BaseModel):
 async def read_all(user: user_dependencies, db: db_dependencies):
     if user is None:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    todos = db.query(TodoItem).filter(TodoItem.owner_id == user.get("id")).all()
-    if not todos:
-        raise HTTPException(status_code=404, detail="No todos found")
-    return todos
+    return db.query(TodoItem).filter(TodoItem.owner_id == user.get("id")).all()
 
 @router.get("/todo/{todo_id}", status_code=status.HTTP_200_OK)
 async def read_todo(user: user_dependencies,db: db_dependencies, todo_id: int = Path(gt=0)):
