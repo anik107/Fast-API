@@ -1,0 +1,132 @@
+{% include 'layout.html' %}
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            Let's edit your todo
+        </div>
+        <div class="card-body">
+            <form id="editTodoForm">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" class="form-control" name="title" value="{{todo.title}}" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-control" name="description" rows="3" required>{{todo.description}}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select class="form-control" name="priority">
+                        {% for i in range(1, 6) %}
+                            <option value="{{i}}" {% if i == todo.priority %}selected{% endif %}>{{i}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" name="completed" {% if todo.completed %}checked{% endif %}>
+                    <label class="form-check-label">Completed</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Edit your Todo</button>
+                <button id="deleteButton" type="button" class="btn btn-danger">Delete</button>
+                <a href="/todos/todo-page" class="btn btn-success">Back</a>
+            </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editTodoForm = document.getElementById('editTodoForm');
+        if (editTodoForm) {
+                editTodoForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const form = event.target;
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+                var url = window.location.pathname;
+                const todoId = url.substring(url.lastIndexOf('/') + 1);
+
+                const payload = {
+                    title: data.title,
+                    description: data.description,
+                    priority: parseInt(data.priority),
+                    completed: data.completed === "on"
+                };
+
+                try {
+                    const token = getCookie('access_token');
+                    console.log(token)
+                    if (!token) {
+                        throw new Error('Authentication token not found');
+                    }
+
+                    console.log(`${todoId}`)
+
+                    const response = await fetch(`/todos/todo/${todoId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        window.location.href = '/todos/todo-page'; // Redirect to the todo page
+                    } else {
+                        // Handle error
+                        const errorData = await response.json();
+                        alert(`Error: ${errorData.detail}`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+            document.getElementById('deleteButton').addEventListener('click', async function () {
+            var url = window.location.pathname;
+            const todoId = url.substring(url.lastIndexOf('/') + 1);
+
+            try {
+                const token = getCookie('access_token');
+                if (!token) {
+                    throw new Error('Authentication token not found');
+                }
+
+                const response = await fetch(`/todos/todo/${todoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Handle success
+                    window.location.href = '/todos/todo-page'; // Redirect to the todo page
+                } else {
+                    // Handle error
+                    const errorData = await response.json();
+                    alert(`Error: ${errorData.detail}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        });
+        }
+    });
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    };
+</script>

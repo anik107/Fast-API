@@ -78,6 +78,32 @@ async def render_todo_page(request: Request, db: db_dependencies):
         _logger.error(f"Error in render_todo_page: {str(e)}")
         return redirect_to_login()
 
+@router.get("/add-todo-page")
+async def render_add_todo_page(request: Request, db: db_dependencies):
+    try:
+        user = await get_current_user(request.cookies.get('access_token'))
+        if user is None:
+            return redirect_to_login()
+        return templates.TemplateResponse("add-todo.html", {"request": request, "user": user})
+    except Exception as e:
+        _logger.error(f"Error in render_add_todo_page: {str(e)}")
+        return redirect_to_login()
+
+@router.get("/edit-todo-page/{todo_id}")
+async def render_edit_todo_page(request: Request, todo_id: int, db: db_dependencies):
+    try:
+        user = await get_current_user(request.cookies.get('access_token'))
+        if user is None:
+            return redirect_to_login()
+        todo = db.query(TodoItem).filter(TodoItem.id == todo_id)\
+            .filter(TodoItem.owner_id == user.get('id')).first()
+        if not todo:
+            raise HTTPException(status_code=404, detail="Todo not found")
+        return templates.TemplateResponse("edit-todo.html", {"request": request, "todo": todo, "user": user})
+    except Exception as e:
+        _logger.error(f"Error in render_edit_todo_page: {str(e)}")
+        return redirect_to_login()
+
 ### Endpoints ###
 @router.get("/")
 async def read_all(user: user_dependencies, db: db_dependencies):

@@ -22,7 +22,7 @@ app.mount("/static", StaticFiles(directory="todoApp/static"), name="static")
 
 @app.get("/")
 async def root():
-    return RedirectResponse(url="/auth/login-page", status_code=status.HTTP_302_FOUND)
+    return RedirectResponse(url="/todos/todo-page", status_code=status.HTTP_302_FOUND)
 
 
 app.include_router(auth.router)
