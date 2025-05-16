@@ -1,10 +1,21 @@
+import json
+import logging
 from typing import Annotated
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Request
+from starlette.responses import RedirectResponse
 from ..models import Users, TodoItem
 from ..database import SessionLocal
 from .auth import get_current_user
+from fastapi.templating import Jinja2Templates
+import os
+from pathlib import Path
+
+_logger = logging.getLogger(__name__)
+
+# Get the absolute path to the templates directory
+templates = Jinja2Templates(directory="todoApp/templates")
 
 router = APIRouter(
     prefix="/todos",
@@ -38,6 +49,36 @@ class TodoItemRequest(BaseModel):
         }
     }
 
+
+def redirect_to_login():
+    redirect_response = RedirectResponse(url="/auth/login-page", status_code=status.HTTP_302_FOUND)
+    redirect_response.delete_cookie("access_token")
+    return redirect_response
+
+### Pages ###
+
+@router.get("/todo-page")
+async def render_todo_page(request: Request, db: db_dependencies):
+    try:
+        user = await get_current_user(request.cookies.get('access_token'))
+        if user is None:
+            return redirect_to_login()
+        todos = db.query(TodoItem).filter(TodoItem.owner_id == user.get("id")).all()
+        todo_list = []
+        for todo in todos:
+            todo_list.append({
+                "id": todo.id,
+                "title": todo.title,
+                "description": todo.description,
+                "priority": todo.priority,
+                "completed": todo.completed
+            })
+        return templates.TemplateResponse("todo.html", {"request": request, "todos": todo_list, "user": user})
+    except Exception as e:
+        _logger.error(f"Error in render_todo_page: {str(e)}")
+        return redirect_to_login()
+
+### Endpoints ###
 @router.get("/")
 async def read_all(user: user_dependencies, db: db_dependencies):
     if user is None:

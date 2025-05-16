@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from ..models import Users
 from passlib.context import CryptContext
@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from ..database import SessionLocal
 from jose import jwt
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 
 SECRET_KEY = "8aeb630da12893c3007248e7aab968c6b942e7c91a5ccc455f6b5264a36b51c7"
@@ -42,6 +44,21 @@ def get_db():
         db.close()
 
 db_dependency = Annotated[Session, Depends(get_db)]
+
+templates = Jinja2Templates(directory="todoApp/templates")
+
+### Pages ###
+@router.get("/login-page")
+def render_login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+@router.get("/register-page")
+def renderlogin_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+
+### Endpoints ###
 
 def authenticate_user(username: str, password: str, db: Session):
     user = db.query(Users).filter(Users.username == username).first()

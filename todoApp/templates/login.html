@@ -1,0 +1,104 @@
+{% include 'layout.html' %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h1>Login</h1>
+        </div>
+        <div class="card-body">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" class="form-control" name="username" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+            <div id="loginError" class="mt-3 text-danger" style="display: none;"></div>
+        </div>
+        <div class="card-footer text-muted">
+            <p>Don't have an account? <a href="/auth/register-page">Register here</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // This ensures the script runs only after the full page has loaded
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function (event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            const payload = new URLSearchParams();
+            for (const [key, value] of formData.entries()) {
+                payload.append(key, value);
+            }
+
+            try {
+                const response = await fetch('/auth/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: payload.toString()
+                });
+
+                if (response.ok) {
+                    // Handle success (e.g., redirect to dashboard)
+                    const data = await response.json();
+                    // Delete any cookies available
+                    logout();
+                    // Save token to cookie
+                    document.cookie = `access_token=${data.access_token}; path=/`;
+                    window.location.href = '/todos/todo-page'; // Redirect to todo page
+                } else {
+                    // Show error message
+                    const errorData = await response.json();
+                    const errorDiv = document.getElementById('loginError');
+                    errorDiv.textContent = `Error: ${errorData.detail}`;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        });
+    }
+
+    // Helper function to get a cookie by name
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function logout() {
+        // Get all cookies
+        const cookies = document.cookie.split(";");
+
+        // Iterate through all cookies and delete each one
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i];
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            // Set the cookie's expiry date to a past date to delete it
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        }
+    }
+});
+</script>
