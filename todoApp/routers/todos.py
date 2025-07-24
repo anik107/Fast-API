@@ -4,9 +4,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Path, status, Request
 from starlette.responses import RedirectResponse
-from models import TodoItem
-from database import SessionLocal
-from routers.auth import get_current_user
+from ..models import TodoItem
+from ..database import SessionLocal
+from .auth import get_current_user
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
