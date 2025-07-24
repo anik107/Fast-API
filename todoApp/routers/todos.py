@@ -1,15 +1,13 @@
-import json
 import logging
 from typing import Annotated
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Path, status, Request
 from starlette.responses import RedirectResponse
-from ..models import Users, TodoItem
-from ..database import SessionLocal
-from .auth import get_current_user
+from models import TodoItem
+from database import SessionLocal
+from routers.auth import get_current_user
 from fastapi.templating import Jinja2Templates
-import os
 from pathlib import Path
 
 _logger = logging.getLogger(__name__)
